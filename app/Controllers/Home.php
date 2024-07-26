@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 use App\Models\ExcelRecord;
+use App\Models\ProductModel;
 
 class Home extends BaseController
 {
@@ -132,6 +133,40 @@ class Home extends BaseController
             }
             
             $this->download($filePath);
+        }
+    }
+
+    public function productList(){
+        $limit = (!empty($_REQUEST['length']) ? (int)$_REQUEST['length'] : null);
+        $start = (!empty($_REQUEST['start']) ? (int)$_REQUEST['start'] : 0);
+        $data = array();
+        $model = new ProductModel;
+        $condition = 'status="1"';
+        
+        if(!empty($limit)){
+
+            if(!empty($_REQUEST['search']['value'])){
+                $condition .= ' AND product_name LIKE "%'.$_REQUEST['search']['value'].'%" OR product_color LIKE "%'.$_REQUEST['search']['value'].'%" ';
+            }
+                        
+            $product_data = $model->where($condition)->orderBy('product_id','desc')->findAll($limit,$start);
+            $all_data = $model->where($condition)->countAllResults();
+            
+            if(!empty($product_data)){
+                $data['data'] = $product_data;
+                $data['draw'] = $_REQUEST['draw'];
+                $data['recordsTotal'] = $all_data;
+                $data['recordsFiltered'] = $all_data;
+            }else{
+                $data['data'] = array();
+                $data['draw'] = $_REQUEST['draw'];
+                $data['recordsTotal'] = 0;
+                $data['recordsFiltered'] = 0;
+            }
+            echo json_encode($data);
+        }
+        else{
+            return view('productList');
         }
     }
 }
